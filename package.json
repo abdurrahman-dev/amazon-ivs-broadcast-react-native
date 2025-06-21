@@ -1,7 +1,7 @@
 {
   "name": "amazon-ivs-broadcast-react-native",
-  "version": "1.0.8",
-  "description": "Amazon IVS Broadcast için React Native kapsayıcı modül (iOS ve Android). Kamera, mikrofon, yayın yönetimi, gelişmiş IVS özellikleri.",
+  "version": "1.1.1",
+  "description": "Amazon IVS Broadcast için React Native kapsayıcı modül (iOS 14+ ve Android 9.0+). Kamera, mikrofon, yayın yönetimi, gelişmiş IVS özellikleri.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",

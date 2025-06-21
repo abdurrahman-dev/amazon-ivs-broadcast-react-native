@@ -10,9 +10,10 @@ class AmazonIVSBroadcastPreviewManager: RCTViewManager {
   }
 
   override func view() -> UIView! {
-    let preview = IVSImagePreviewView()
+    let preview = IVSImagePreviewView(frame: .zero)
     if let session = AmazonIVSBroadcastModule.sharedSession {
-      preview.session = session
+      preview.previewSession = session
+      preview.setMirrored(true)
     }
     return preview
   }

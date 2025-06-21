@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "amazon-ivs-broadcast-react-native"
-  s.version      = "1.0.8"
+  s.version      = "1.1.1"
   s.summary      = "Amazon IVS Broadcast için React Native kapsayıcı modül (iOS ve Android)"
   s.description  = <<-DESC
     Amazon IVS Broadcast için React Native kapsayıcı modül (iOS ve Android). Kamera, mikrofon, yayın yönetimi, gelişmiş IVS özellikleri.
@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.homepage     = "https://github.com/abdurrahman-dev/amazon-ivs-broadcast-react-native"
   s.license      = { :type => "MIT" }
   s.author       = { "abdurrahman-dev" => "abdur.caglar@gmail.com" }
-  s.platform     = :ios, "13.0"
+  s.platform     = :ios, "14.0"
   s.source       = { :git => "https://github.com/abdurrahman-dev/amazon-ivs-broadcast-react-native.git", :tag => "#{s.version}" }
   s.source_files  = "ios/**/*.{h,m,swift}"
   s.requires_arc = true

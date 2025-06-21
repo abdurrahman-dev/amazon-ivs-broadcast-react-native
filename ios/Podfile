@@ -9,5 +9,5 @@ target 'amazon-ivs-broadcast-react-native' do
   use_react_native!(:path => config[:reactNativePath])
 
   # Amazon IVS Broadcast SDK (1.31.0)
-  pod 'AmazonIVSBroadcast', '~> 1.31.0'
+  pod 'AmazonIVSBroadcast', :http => 'https://broadcast.live-video.net/1.31.0/AmazonIVSBroadcast-Stages.xcframework.zip'
 end 
