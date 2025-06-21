@@ -9,18 +9,25 @@ import {
   ViewProps,
 } from "react-native";
 import type {
-  CameraDevice,
-  MicrophoneDevice,
+  Device,
   VideoConfig,
   AudioConfig,
-  MixerLayoutConfig,
+  MixerConfig,
+  BroadcastConfig,
   BroadcastOptions,
-  BroadcastTestOptions,
-  BroadcastTestResult,
+  TransmissionStats,
+  AspectMode,
+  PreviewProps,
   IVSEvent,
-  CustomImageBuffer,
-  CustomAudioBuffer,
-  SimulcastConfig,
+  ErrorEvent,
+  DeviceChangedEvent,
+  BitrateChangedEvent,
+  NetworkHealthChangedEvent,
+  StreamHealthEvent,
+  ResourceLimitEvent,
+  BroadcastState,
+  BroadcastMetrics,
+  AudioSessionConfiguration,
 } from "./types";
 
 const LINKING_ERROR =
@@ -45,6 +52,7 @@ const emitter = NativeModules.AmazonIVSBroadcastModule
   ? new NativeEventEmitter(NativeModules.AmazonIVSBroadcastModule)
   : undefined;
 
+// Yayın Yönetimi
 export function startBroadcast(options: BroadcastOptions): Promise<void> {
   return AmazonIVSBroadcastModule.startBroadcast(options);
 }
@@ -53,20 +61,13 @@ export function stopBroadcast(): Promise<void> {
   return AmazonIVSBroadcastModule.stopBroadcast();
 }
 
+// Cihaz Yönetimi
+export function getAvailableDevices(): Promise<Device[]> {
+  return AmazonIVSBroadcastModule.getAvailableDevices();
+}
+
 export function switchCamera(): Promise<void> {
   return AmazonIVSBroadcastModule.switchCamera();
-}
-
-export function muteMicrophone(mute: boolean): Promise<void> {
-  return AmazonIVSBroadcastModule.muteMicrophone(mute);
-}
-
-export function getAvailableCameras(): Promise<CameraDevice[]> {
-  return AmazonIVSBroadcastModule.getAvailableCameras();
-}
-
-export function getAvailableMicrophones(): Promise<MicrophoneDevice[]> {
-  return AmazonIVSBroadcastModule.getAvailableMicrophones();
 }
 
 export function attachCamera(deviceId: string): Promise<void> {
@@ -77,11 +78,11 @@ export function attachMicrophone(deviceId: string): Promise<void> {
   return AmazonIVSBroadcastModule.attachMicrophone(deviceId);
 }
 
-export function addListener(event: IVSEvent, callback: (data: any) => void) {
-  if (!emitter) throw new Error(LINKING_ERROR);
-  return emitter.addListener(event, callback);
+export function muteMicrophone(muted: boolean): Promise<void> {
+  return AmazonIVSBroadcastModule.muteMicrophone(muted);
 }
 
+// Konfigürasyon
 export function setVideoConfig(config: VideoConfig): Promise<void> {
   return AmazonIVSBroadcastModule.setVideoConfig(config);
 }
@@ -90,45 +91,52 @@ export function setAudioConfig(config: AudioConfig): Promise<void> {
   return AmazonIVSBroadcastModule.setAudioConfig(config);
 }
 
-export function setMixerLayout(layout: MixerLayoutConfig): Promise<void> {
-  return AmazonIVSBroadcastModule.setMixerLayout(layout);
+export function setMixerConfig(config: MixerConfig): Promise<void> {
+  return AmazonIVSBroadcastModule.setMixerConfig(config);
 }
 
-export function startScreenCapture(): Promise<void> {
-  return AmazonIVSBroadcastModule.startScreenCapture();
+// İstatistikler ve Metrikler
+export function getTransmissionStats(): Promise<TransmissionStats> {
+  return AmazonIVSBroadcastModule.getTransmissionStats();
 }
 
-export function stopScreenCapture(): Promise<void> {
-  return AmazonIVSBroadcastModule.stopScreenCapture();
+export function getStreamMetrics(): Promise<BroadcastMetrics> {
+  return AmazonIVSBroadcastModule.getStreamMetrics();
 }
 
-export function setCustomImageSource(buffer: CustomImageBuffer): Promise<void> {
-  return AmazonIVSBroadcastModule.setCustomImageSource(buffer);
+// Audio Session Yönetimi
+export function configureAudioSession(
+  config: AudioSessionConfiguration
+): Promise<void> {
+  return AmazonIVSBroadcastModule.configureAudioSession(config);
 }
 
-export function setCustomAudioSource(buffer: CustomAudioBuffer): Promise<void> {
-  return AmazonIVSBroadcastModule.setCustomAudioSource(buffer);
+// Event Yönetimi
+export function addListener(
+  eventType: IVSEvent,
+  listener: (
+    event:
+      | { state: BroadcastState }
+      | ErrorEvent
+      | DeviceChangedEvent
+      | BitrateChangedEvent
+      | NetworkHealthChangedEvent
+      | StreamHealthEvent
+      | ResourceLimitEvent
+      | null
+  ) => void
+) {
+  return emitter?.addListener(eventType, listener);
 }
 
-export function runBroadcastTest(
-  options: BroadcastTestOptions
-): Promise<BroadcastTestResult> {
-  return AmazonIVSBroadcastModule.runBroadcastTest(options);
+export function removeListener(
+  eventType: IVSEvent,
+  listener: (event: any) => void
+) {
+  emitter?.addListener(eventType, listener).remove();
 }
 
-export function getSessionId(): Promise<string> {
-  return AmazonIVSBroadcastModule.getSessionId();
-}
-
-export function setSimulcastConfig(config: SimulcastConfig): Promise<void> {
-  return AmazonIVSBroadcastModule.setSimulcastConfig(config);
-}
-
-export function setAutoReconnect(enabled: boolean): Promise<void> {
-  return AmazonIVSBroadcastModule.setAutoReconnect(enabled);
-}
-
-interface IVSBroadcastPreviewProps extends ViewProps {}
-
-export const IVSBroadcastPreview =
-  requireNativeComponent<IVSBroadcastPreviewProps>("AmazonIVSBroadcastPreview");
+// Preview Bileşeni
+export const IVSBroadcastPreview = requireNativeComponent<PreviewProps>(
+  "AmazonIVSBroadcastPreview"
+);

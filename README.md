@@ -4,11 +4,32 @@ Amazon IVS Broadcast için React Native kapsayıcı modülüdür. (iOS ve Androi
 
 ## Özellikler
 - En güncel Amazon IVS Broadcast SDK (iOS: 1.31.0, Android: 1.31.0)
-- Modern React Native köprüsü (TurboModule/JSI desteği)
-- Kamera, mikrofon, yayın başlatma/durdurma, cihaz yönetimi
-- Dinamik yayın ayarları (bitrate, çözünürlük, framerate, layout)
-- Event/Callback desteği (yayın durumu, hata, cihaz değişimi, bitrate, vs.)
-- Gelişmiş fonksiyonlar: sessionId, broadcast test, simulcast, auto-reconnect, custom source, screen capture (iskele)
+- Modern React Native köprüsü
+- Tam özellikli yayın yönetimi:
+  - Kamera ve mikrofon kontrolü
+  - Video/Audio konfigürasyonu
+  - Mixer ve layout yönetimi
+  - Auto-reconnect desteği
+  - H.265 kodlama desteği
+  - Kalite optimizasyonu
+- Gelişmiş özellikler:
+  - Network sağlığı izleme
+  - Yayın kalitesi metrikleri
+  - CPU, bellek, batarya kullanımı
+  - Audio session yönetimi
+  - Echo cancellation ve gürültü önleme
+- Kapsamlı event sistemi:
+  - Yayın durumu değişiklikleri
+  - Hata yönetimi
+  - Cihaz değişiklikleri
+  - Bitrate değişiklikleri
+  - Network sağlığı
+  - Resource limitleri
+
+## Gereksinimler
+- iOS 14.0 ve üzeri
+- Android API 28 (Android 9.0) ve üzeri
+- React Native 0.71.0 ve üzeri
 
 ## Kurulum
 
@@ -30,78 +51,109 @@ import {
   stopBroadcast,
   switchCamera,
   muteMicrophone,
-  getAvailableCameras,
-  getAvailableMicrophones,
+  getAvailableDevices,
   attachCamera,
   attachMicrophone,
   setVideoConfig,
   setAudioConfig,
-  setMixerLayout,
-  getSessionId,
-  runBroadcastTest,
+  setMixerConfig,
+  getTransmissionStats,
+  getStreamMetrics,
+  configureAudioSession,
   addListener,
   removeListener,
+  IVSBroadcastPreview,
 } from 'amazon-ivs-broadcast-react-native';
 
+// Preview bileşeni
+<IVSBroadcastPreview
+  style={styles.preview}
+  aspectMode="fit"
+  mirrored={true}
+  onErrorOccurred={handleError}
+/>
+
 // Yayın başlat
-await startBroadcast({ rtmpsUrl, streamKey });
+await startBroadcast({
+  rtmpsUrl,
+  streamKey,
+  video: {
+    width: 1280,
+    height: 720,
+    bitrate: 2500000,
+    targetFramerate: 30,
+    keyframeInterval: 2,
+    maxBitrate: 3000000,
+    minBitrate: 1000000,
+    qualityOptimization: 'quality',
+    useH265: true,
+  },
+  audio: {
+    bitrate: 128000,
+    channels: 2,
+    sampleRate: 44100,
+    enableEchoCancellation: true,
+    enableNoiseSuppression: true,
+  },
+  mixer: {
+    canvasWidth: 1280,
+    canvasHeight: 720,
+    backgroundColor: '#000000',
+  },
+  enableAutoReconnect: true,
+  autoReconnectMaxRetries: 3,
+  autoReconnectRetryInterval: 5,
+});
+
 // Yayını durdur
 await stopBroadcast();
-// Kamera değiştir
+
+// Cihaz yönetimi
+const devices = await getAvailableDevices();
+await attachCamera(devices[0].id);
+await attachMicrophone(devices[1].id);
 await switchCamera();
-// Mikrofonu kapat/aç
 await muteMicrophone(true);
-// Kamera/mikrofon listesi
-const cameras = await getAvailableCameras();
-const mics = await getAvailableMicrophones();
-// Kamera/mikrofon ata
-await attachCamera(cameras[0].id);
-await attachMicrophone(mics[0].id);
-// Video/audio ayarları
-await setVideoConfig({ bitrate: 1500000, width: 1280, height: 720, framerate: 30 });
-await setAudioConfig({ bitrate: 128000 });
+
+// Konfigürasyon
+await setVideoConfig({ /* ... */ });
+await setAudioConfig({ /* ... */ });
+await setMixerConfig({ /* ... */ });
+
+// İstatistikler
+const stats = await getTransmissionStats();
+const metrics = await getStreamMetrics();
+
+// Audio session
+await configureAudioSession({
+  category: 'playAndRecord',
+  mode: 'videoChat',
+  mixWithOthers: true,
+});
+
 // Event dinleme
-const sub = addListener('stateChanged', (data) => { /* ... */ });
-sub.remove();
+const subscription = addListener('stateChanged', (event) => {
+  console.log('Yayın durumu:', event.state);
+});
+subscription.remove();
 ```
 
 ## Event Listesi
-- `stateChanged`
-- `error`
-- `deviceChanged`
-- `bitrateChanged`
-- `networkQualityChanged`
-- `reconnecting`
-- `reconnected`
+- `stateChanged`: Yayın durumu değişiklikleri
+- `error`: Hata durumları
+- `deviceChanged`: Kamera/mikrofon değişiklikleri
+- `bitrateChanged`: Bitrate değişiklikleri
+- `networkHealthChanged`: Network sağlığı değişiklikleri
+- `audioSessionInterrupted`: Audio session kesintileri
+- `audioSessionResumed`: Audio session devam etme
+- `cameraError`: Kamera hataları
+- `microphoneError`: Mikrofon hataları
+- `reconnecting`: Yeniden bağlanma başladı
+- `reconnected`: Yeniden bağlanma başarılı
+- `streamHealthChanged`: Yayın sağlığı değişiklikleri
+- `resourceLimitExceeded`: Kaynak limit aşımları
+- `streamInterrupted`: Yayın kesintileri
+- `streamResumed`: Yayın devam etme
 
-## Gelişmiş Fonksiyonlar
-- `getSessionId()` — Aktif yayın sessionId'si
-- `runBroadcastTest({ rtmpsUrl, streamKey })` — Yayın öncesi bağlantı testi
-- `setSimulcastConfig(config)` — Simulcast ayarları (iskele)
-- `setAutoReconnect(enabled)` — Otomatik yeniden bağlanma (iskele)
-- `setCustomImageSource(buffer)` — Custom video kaynağı (iskele)
-- `setCustomAudioSource(buffer)` — Custom audio kaynağı (iskele)
-- `startScreenCapture()` / `stopScreenCapture()` — Ekran paylaşımı (iskele)
-
-## Örnek Uygulama
-Tüm özelliklerin canlı örneği için `example/` klasörüne bakınız.
-
-## NPM Yayını
-1. Versiyon numarasını güncelleyin (`package.json`)
-2. Giriş klasöründe `npm publish --access public` komutunu çalıştırın
-3. Native modül olduğu için, kullanıcıların iOS'ta `pod install` çalıştırması gerektiğini belirtin
-
-## Katkı ve Lisans
-MIT Lisansı. Katkılarınızı bekleriz!
-
----
-
-Daha fazla bilgi ve dökümantasyon eklenecektir.
-
-> **Uyarı:** `removeListener` fonksiyonu artık mevcuttur. Ayrıca aşağıdaki fonksiyonlar şu an sadece iskelet olarak yer almakta ve native tarafta gerçek bir işlevi yoktur:
-> - `startScreenCapture`, `stopScreenCapture`
-> - `setCustomImageSource`, `setCustomAudioSource`
-> - `runBroadcastTest`
-> - `setSimulcastConfig`
-> - `setAutoReconnect`
-> Bu fonksiyonlar çağrıldığında hata döner. Gerçek native entegrasyon için katkı beklenmektedir.
+## Lisans
+MIT

@@ -1,5 +1,6 @@
 package com.amazonivs;
 
+import android.media.AudioManager;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
@@ -173,6 +174,31 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
             if (videoConfig.hasKey("keyframeInterval")) {
                 video.setKeyframeInterval(videoConfig.getInt("keyframeInterval"));
             }
+
+            if (videoConfig.hasKey("maxBitrate")) {
+                video.setMaxBitrate(videoConfig.getInt("maxBitrate"));
+            }
+
+            if (videoConfig.hasKey("minBitrate")) {
+                video.setMinBitrate(videoConfig.getInt("minBitrate"));
+            }
+
+            if (videoConfig.hasKey("qualityOptimization")) {
+                String optimization = videoConfig.getString("qualityOptimization");
+                video.setQualityOptimization(
+                    optimization.equals("quality") ? 
+                    Video.QualityOptimization.QUALITY : 
+                    Video.QualityOptimization.LATENCY
+                );
+            }
+
+            if (videoConfig.hasKey("useH265")) {
+                video.setUseH265(videoConfig.getBoolean("useH265"));
+            }
+
+            if (videoConfig.hasKey("enableTranscoding")) {
+                video.setEnableTranscoding(videoConfig.getBoolean("enableTranscoding"));
+            }
         }
 
         // Audio ayarları
@@ -187,6 +213,18 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
             if (audioConfig.hasKey("channels")) {
                 audio.setChannels(audioConfig.getInt("channels"));
             }
+
+            if (audioConfig.hasKey("sampleRate")) {
+                audio.setSampleRate(audioConfig.getInt("sampleRate"));
+            }
+
+            if (audioConfig.hasKey("enableEchoCancellation")) {
+                audio.setEnableEchoCancellation(audioConfig.getBoolean("enableEchoCancellation"));
+            }
+
+            if (audioConfig.hasKey("enableNoiseSuppression")) {
+                audio.setEnableNoiseSuppression(audioConfig.getBoolean("enableNoiseSuppression"));
+            }
         }
 
         // Mixer ayarları
@@ -199,6 +237,24 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
                     mixerConfig.getInt("canvasWidth"),
                     mixerConfig.getInt("canvasHeight")
                 );
+            }
+
+            if (mixerConfig.hasKey("backgroundColor")) {
+                String color = mixerConfig.getString("backgroundColor");
+                mixer.setBackgroundColor(Color.parseColor(color));
+            }
+        }
+
+        // Auto-reconnect ayarları
+        if (options.hasKey("enableAutoReconnect")) {
+            config.setEnableAutoReconnect(options.getBoolean("enableAutoReconnect"));
+
+            if (options.hasKey("autoReconnectMaxRetries")) {
+                config.setAutoReconnectMaxRetries(options.getInt("autoReconnectMaxRetries"));
+            }
+
+            if (options.hasKey("autoReconnectRetryInterval")) {
+                config.setAutoReconnectRetryInterval(options.getDouble("autoReconnectRetryInterval"));
             }
         }
 
@@ -281,5 +337,77 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
         result.putString("networkHealth", stats.getNetworkHealth().name());
         result.putString("broadcastQuality", stats.getBroadcastQuality().name());
         promise.resolve(result);
+    }
+
+    @ReactMethod
+    public void getStreamMetrics(Promise promise) {
+        if (broadcastSession == null) {
+            promise.reject("E_NO_SESSION", "Aktif bir yayın yok");
+            return;
+        }
+
+        WritableMap metrics = Arguments.createMap();
+        metrics.putDouble("cpu", broadcastSession.getStreamMetrics().getCpuUsage());
+        metrics.putDouble("memory", broadcastSession.getStreamMetrics().getMemoryUsage());
+        metrics.putDouble("battery", broadcastSession.getStreamMetrics().getBatteryLevel());
+        metrics.putDouble("temperature", broadcastSession.getStreamMetrics().getDeviceTemperature());
+        promise.resolve(metrics);
+    }
+
+    @ReactMethod
+    public void configureAudioSession(ReadableMap config, Promise promise) {
+        if (broadcastSession == null) {
+            promise.reject("E_NO_SESSION", "Aktif bir yayın yok");
+            return;
+        }
+
+        try {
+            String category = config.hasKey("category") ? config.getString("category") : "playAndRecord";
+            String mode = config.hasKey("mode") ? config.getString("mode") : "default";
+            boolean mixWithOthers = config.hasKey("mixWithOthers") ? config.getBoolean("mixWithOthers") : false;
+
+            AudioManager.Mode audioMode = getAudioMode(mode);
+            int streamType = getStreamType(category);
+
+            AudioManager audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
+            audioManager.setMode(audioMode);
+            audioManager.setStreamVolume(streamType, audioManager.getStreamMaxVolume(streamType), 0);
+            
+            if (mixWithOthers) {
+                audioManager.setMicrophoneMute(false);
+                audioManager.setSpeakerphoneOn(true);
+            }
+
+            promise.resolve(null);
+        } catch (Exception e) {
+            promise.reject("E_AUDIO_SESSION", "Audio session yapılandırılamadı: " + e.getMessage());
+        }
+    }
+
+    private int getStreamType(String category) {
+        switch (category) {
+            case "ambient":
+                return AudioManager.STREAM_SYSTEM;
+            case "playback":
+                return AudioManager.STREAM_MUSIC;
+            case "record":
+                return AudioManager.STREAM_VOICE_CALL;
+            case "playAndRecord":
+            default:
+                return AudioManager.STREAM_VOICE_CALL;
+        }
+    }
+
+    private int getAudioMode(String mode) {
+        switch (mode) {
+            case "voiceChat":
+                return AudioManager.MODE_IN_COMMUNICATION;
+            case "gameChat":
+                return AudioManager.MODE_NORMAL;
+            case "videoChat":
+                return AudioManager.MODE_IN_COMMUNICATION;
+            default:
+                return AudioManager.MODE_NORMAL;
+        }
     }
 } 

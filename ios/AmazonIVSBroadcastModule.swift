@@ -1,6 +1,7 @@
 import Foundation
 import React
 import AmazonIVSBroadcast
+import AVFoundation
 
 @objc(AmazonIVSBroadcastModule)
 class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
@@ -117,6 +118,19 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
         delegate: self
       )
       
+      // Auto-reconnect ayarları
+      if let enableAutoReconnect = options["enableAutoReconnect"] as? Bool {
+        self.broadcastSession?.shouldAutoReconnect = enableAutoReconnect
+        
+        if let maxRetries = options["autoReconnectMaxRetries"] as? Int {
+          self.broadcastSession?.maxReconnectAttempts = maxRetries
+        }
+        
+        if let retryInterval = options["autoReconnectRetryInterval"] as? Double {
+          self.broadcastSession?.reconnectRetryInterval = retryInterval
+        }
+      }
+      
       AmazonIVSBroadcastModule.sharedSession = self.broadcastSession
       
       try self.broadcastSession?.start(with: rtmpsUrl, streamKey: streamKey)
@@ -144,6 +158,21 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
       if let keyframeInterval = videoConfig["keyframeInterval"] as? Int {
         try config.video.setKeyframeInterval(keyframeInterval)
       }
+      if let maxBitrate = videoConfig["maxBitrate"] as? Int {
+        try config.video.setMaxBitrate(maxBitrate)
+      }
+      if let minBitrate = videoConfig["minBitrate"] as? Int {
+        try config.video.setMinBitrate(minBitrate)
+      }
+      if let qualityOptimization = videoConfig["qualityOptimization"] as? String {
+        config.video.qualityOptimization = qualityOptimization == "quality" ? .quality : .latency
+      }
+      if let useH265 = videoConfig["useH265"] as? Bool {
+        config.video.useH265 = useH265
+      }
+      if let enableTranscoding = videoConfig["enableTranscoding"] as? Bool {
+        config.video.enableTranscoding = enableTranscoding
+      }
     }
     
     // Audio ayarları
@@ -154,6 +183,15 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
       if let channels = audioConfig["channels"] as? Int {
         try config.audio.setChannels(channels)
       }
+      if let sampleRate = audioConfig["sampleRate"] as? Int {
+        try config.audio.setSampleRate(sampleRate)
+      }
+      if let enableEchoCancellation = audioConfig["enableEchoCancellation"] as? Bool {
+        config.audio.enableEchoCancellation = enableEchoCancellation
+      }
+      if let enableNoiseSuppression = audioConfig["enableNoiseSuppression"] as? Bool {
+        config.audio.enableNoiseSuppression = enableNoiseSuppression
+      }
     }
     
     // Mixer ayarları
@@ -161,6 +199,9 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
       if let canvasWidth = mixerConfig["canvasWidth"] as? Int,
          let canvasHeight = mixerConfig["canvasHeight"] as? Int {
         config.mixer.setCanvasSize(CGSize(width: canvasWidth, height: canvasHeight))
+      }
+      if let backgroundColor = mixerConfig["backgroundColor"] as? String {
+        config.mixer.backgroundColor = UIColor(hexString: backgroundColor)
       }
     }
 
@@ -257,5 +298,64 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
       "networkHealth": stats.networkHealth.rawValue,
       "broadcastQuality": stats.broadcastQuality.rawValue
     ])
+  }
+
+  // MARK: - Yeni Özellikler
+  @objc(getStreamMetrics:withRejecter:)
+  func getStreamMetrics(resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    guard let session = self.broadcastSession else {
+      reject("E_NO_SESSION", "Aktif bir yayın yok", nil)
+      return
+    }
+
+    let metrics = session.streamMetrics
+    resolve([
+      "cpu": metrics.cpuUsage,
+      "memory": metrics.memoryUsage,
+      "battery": metrics.batteryLevel,
+      "temperature": metrics.deviceTemperature
+    ])
+  }
+
+  @objc(configureAudioSession:withResolver:withRejecter:)
+  func configureAudioSession(config: NSDictionary, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    guard let session = self.broadcastSession else {
+      reject("E_NO_SESSION", "Aktif bir yayın yok", nil)
+      return
+    }
+
+    do {
+      let category = config["category"] as? String ?? "playAndRecord"
+      let mode = config["mode"] as? String ?? "default"
+      let mixWithOthers = config["mixWithOthers"] as? Bool ?? false
+
+      try session.configureAudioSession(
+        category: audioSessionCategory(from: category),
+        mode: audioSessionMode(from: mode),
+        options: mixWithOthers ? .mixWithOthers : []
+      )
+      resolve(nil)
+    } catch let error {
+      reject("E_AUDIO_SESSION", "Audio session yapılandırılamadı: \(error.localizedDescription)", error)
+    }
+  }
+
+  private func audioSessionCategory(from string: String) -> AVAudioSession.Category {
+    switch string {
+    case "ambient": return .ambient
+    case "playback": return .playback
+    case "record": return .record
+    case "playAndRecord": return .playAndRecord
+    default: return .playAndRecord
+    }
+  }
+
+  private func audioSessionMode(from string: String) -> AVAudioSession.Mode {
+    switch string {
+    case "voiceChat": return .voiceChat
+    case "gameChat": return .gameChat
+    case "videoChat": return .videoChat
+    default: return .default
+    }
   }
 } 

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "amazon-ivs-broadcast-react-native"
-  s.version      = "1.1.1"
+  s.version      = "1.1.3"
   s.summary      = "Amazon IVS Broadcast için React Native kapsayıcı modül (iOS ve Android)"
   s.description  = <<-DESC
     Amazon IVS Broadcast için React Native kapsayıcı modül (iOS ve Android). Kamera, mikrofon, yayın yönetimi, gelişmiş IVS özellikleri.
