@@ -4,7 +4,7 @@ import AmazonIVSBroadcast
 
 @objc(AmazonIVSBroadcastModule)
 class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
-  static func moduleName() -> String! {
+  override static func moduleName() -> String! {
     return "AmazonIVSBroadcastModule"
   }
 
