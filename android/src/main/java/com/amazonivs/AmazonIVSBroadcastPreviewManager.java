@@ -20,6 +20,10 @@ public class AmazonIVSBroadcastPreviewManager extends SimpleViewManager<PreviewV
     @NonNull
     @Override
     protected PreviewView createViewInstance(@NonNull ThemedReactContext reactContext) {
-        return new PreviewView(reactContext);
+        PreviewView previewView = new PreviewView(reactContext);
+        if (AmazonIVSBroadcastModule.sharedSession != null) {
+            previewView.setSession(AmazonIVSBroadcastModule.sharedSession);
+        }
+        return previewView;
     }
 } 

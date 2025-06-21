@@ -96,4 +96,12 @@ MIT Lisansı. Katkılarınızı bekleriz!
 
 ---
 
-Daha fazla bilgi ve dökümantasyon eklenecektir. 
+Daha fazla bilgi ve dökümantasyon eklenecektir.
+
+> **Uyarı:** `removeListener` fonksiyonu artık mevcuttur. Ayrıca aşağıdaki fonksiyonlar şu an sadece iskelet olarak yer almakta ve native tarafta gerçek bir işlevi yoktur:
+> - `startScreenCapture`, `stopScreenCapture`
+> - `setCustomImageSource`, `setCustomAudioSource`
+> - `runBroadcastTest`
+> - `setSimulcastConfig`
+> - `setAutoReconnect`
+> Bu fonksiyonlar çağrıldığında hata döner. Gerçek native entegrasyon için katkı beklenmektedir.

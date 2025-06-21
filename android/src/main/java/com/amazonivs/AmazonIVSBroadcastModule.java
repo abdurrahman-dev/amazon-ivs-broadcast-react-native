@@ -65,6 +65,7 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
         public void onError(@NonNull BroadcastSession session, @NonNull Exception e) {
             WritableMap map = Arguments.createMap();
             map.putString("message", e.getMessage());
+            map.putString("code", e.getClass().getSimpleName());
             sendEvent("error", map);
         }
 
@@ -79,6 +80,30 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
                 arr.pushMap(dev);
             }
             sendEvent("deviceChanged", arr);
+        }
+
+        @Override
+        public void onBitrateChanged(@NonNull BroadcastSession session, int bitrate) {
+            WritableMap map = Arguments.createMap();
+            map.putInt("bitrate", bitrate);
+            sendEvent("bitrateChanged", map);
+        }
+
+        @Override
+        public void onNetworkHealthChanged(@NonNull BroadcastSession session, int health) {
+            WritableMap map = Arguments.createMap();
+            map.putInt("networkQuality", health);
+            sendEvent("networkQualityChanged", map);
+        }
+
+        @Override
+        public void onReconnectStart(@NonNull BroadcastSession session) {
+            sendEvent("reconnecting", null);
+        }
+
+        @Override
+        public void onReconnectSuccess(@NonNull BroadcastSession session) {
+            sendEvent("reconnected", null);
         }
     };
 
@@ -290,7 +315,6 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
         }
         try {
             if (layout.hasKey("slots")) {
-                // Basit örnek: slot isimleri ve zIndex
                 List<BroadcastConfiguration.MixerSlot> slots = new java.util.ArrayList<>();
                 for (int i = 0; i < layout.getArray("slots").size(); i++) {
                     ReadableMap slot = layout.getArray("slots").getMap(i);
@@ -301,13 +325,25 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
                     if (slot.hasKey("zIndex")) {
                         slotConfig.setZIndex(slot.getInt("zIndex"));
                     }
+                    if (slot.hasKey("x")) {
+                        slotConfig.setX(slot.getInt("x"));
+                    }
+                    if (slot.hasKey("y")) {
+                        slotConfig.setY(slot.getInt("y"));
+                    }
+                    if (slot.hasKey("width")) {
+                        slotConfig.setWidth(slot.getInt("width"));
+                    }
+                    if (slot.hasKey("height")) {
+                        slotConfig.setHeight(slot.getInt("height"));
+                    }
                     slots.add(slotConfig);
                 }
                 broadcastSession.getConfiguration().getMixer().setSlots(slots);
             }
             promise.resolve(null);
         } catch (Exception e) {
-            promise.reject("E_SET_MIXER_LAYOUT", "Mixer layout güncellenemedi", e);
+            promise.reject("E_SET_MIXER_LAYOUT", "Mixer layout güncellenemedi: " + e.getMessage(), e);
         }
     }
 
@@ -326,12 +362,14 @@ public class AmazonIVSBroadcastModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void setCustomImageSource(ReadableMap buffer, Promise promise) {
         // Custom video kaynağı eklemek için iskelet fonksiyon.
+        // Parametreyi CustomImageBuffer olarak decode etmeye çalış
         promise.reject("E_NOT_IMPLEMENTED", "Custom image source için native entegrasyon gereklidir.");
     }
 
     @ReactMethod
     public void setCustomAudioSource(ReadableMap buffer, Promise promise) {
         // Custom audio kaynağı eklemek için iskelet fonksiyon.
+        // Parametreyi CustomAudioBuffer olarak decode etmeye çalış
         promise.reject("E_NOT_IMPLEMENTED", "Custom audio source için native entegrasyon gereklidir.");
     }
 

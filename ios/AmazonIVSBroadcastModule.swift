@@ -21,7 +21,7 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
 
   // MARK: - EventEmitter
   override func supportedEvents() -> [String]! {
-    return ["stateChanged", "error", "deviceChanged"]
+    return ["stateChanged", "error", "deviceChanged", "bitrateChanged", "networkQualityChanged", "reconnecting", "reconnected"]
   }
 
   override func startObserving() {
@@ -44,12 +44,32 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
   }
 
   func broadcastSession(_ session: IVSBroadcastSession, didEmitError error: Error) {
-    sendEvent("error", body: ["message": error.localizedDescription])
+    let nsError = error as NSError
+    sendEvent("error", body: [
+      "message": error.localizedDescription,
+      "code": nsError.domain + ":" + String(nsError.code)
+    ])
   }
 
   func broadcastSession(_ session: IVSBroadcastSession, didChange devices: [IVSDevice]) {
     let deviceList = devices.map { ["id": $0.descriptor().uid, "name": $0.descriptor().name, "type": $0.type.rawValue] }
     sendEvent("deviceChanged", body: deviceList)
+  }
+
+  func broadcastSession(_ session: IVSBroadcastSession, didChangeBitrate bitrate: Int) {
+    sendEvent("bitrateChanged", body: ["bitrate": bitrate])
+  }
+
+  func broadcastSession(_ session: IVSBroadcastSession, didChangeNetworkHealth health: Int) {
+    sendEvent("networkQualityChanged", body: ["networkQuality": health])
+  }
+
+  func broadcastSessionDidStartReconnect(_ session: IVSBroadcastSession) {
+    sendEvent("reconnecting", body: nil)
+  }
+
+  func broadcastSessionDidReconnect(_ session: IVSBroadcastSession) {
+    sendEvent("reconnected", body: nil)
   }
 
   // MARK: - Yayın başlatma
@@ -230,7 +250,7 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
       return
     }
     do {
-      // Basit bir örnek: slot isimleri ve pozisyonları
+      // Gelişmiş: slot isimleri, pozisyon ve boyut
       if let slots = layout["slots"] as? [[String: Any]] {
         var mixerSlots: [IVSMixerSlotConfiguration] = []
         for slot in slots {
@@ -241,13 +261,26 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
           if let zIndex = slot["zIndex"] as? NSNumber {
             slotConfig.zIndex = zIndex.intValue
           }
+          if let x = slot["x"] as? NSNumber {
+            slotConfig.x = x.intValue
+          }
+          if let y = slot["y"] as? NSNumber {
+            slotConfig.y = y.intValue
+          }
+          if let width = slot["width"] as? NSNumber {
+            slotConfig.width = width.intValue
+          }
+          if let height = slot["height"] as? NSNumber {
+            slotConfig.height = height.intValue
+          }
           mixerSlots.append(slotConfig)
         }
         session.configuration.mixer.slots = mixerSlots
       }
       resolve(nil)
     } catch let error {
-      reject("E_SET_MIXER_LAYOUT", "Mixer layout güncellenemedi", error)
+      let nsError = error as NSError
+      reject("E_SET_MIXER_LAYOUT", "Mixer layout güncellenemedi: \(error.localizedDescription) [\(nsError.domain):\(nsError.code)]", error)
     }
   }
 
@@ -264,15 +297,30 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
     reject("E_NOT_IMPLEMENTED", "iOS'ta ekran paylaşımı için ReplayKit entegrasyonu gereklidir.", nil)
   }
 
+  struct CustomImageBuffer: Codable {
+    let data: Data
+    let width: Int
+    let height: Int
+    let pixelFormat: String
+  }
+
+  struct CustomAudioBuffer: Codable {
+    let data: Data
+    let sampleRate: Int
+    let channels: Int
+  }
+
   @objc(setCustomImageSource:withResolver:withRejecter:)
   func setCustomImageSource(buffer: NSDictionary, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
     // Custom video kaynağı eklemek için iskelet fonksiyon.
+    // Parametreyi CustomImageBuffer'a decode etmeye çalış
     reject("E_NOT_IMPLEMENTED", "Custom image source için native entegrasyon gereklidir.", nil)
   }
 
   @objc(setCustomAudioSource:withResolver:withRejecter:)
   func setCustomAudioSource(buffer: NSDictionary, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
     // Custom audio kaynağı eklemek için iskelet fonksiyon.
+    // Parametreyi CustomAudioBuffer'a decode etmeye çalış
     reject("E_NOT_IMPLEMENTED", "Custom audio source için native entegrasyon gereklidir.", nil)
   }
 

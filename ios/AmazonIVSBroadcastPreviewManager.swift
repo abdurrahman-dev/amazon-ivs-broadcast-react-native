@@ -10,7 +10,11 @@ class AmazonIVSBroadcastPreviewManager: RCTViewManager {
   }
 
   override func view() -> UIView! {
-    return IVSPreviewView()
+    let preview = IVSPreviewView()
+    if let session = AmazonIVSBroadcastModule.sharedSession {
+      preview.session = session
+    }
+    return preview
   }
 
   @objc override func constantsToExport() -> [AnyHashable : Any]! {

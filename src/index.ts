@@ -18,6 +18,9 @@ import type {
   BroadcastTestOptions,
   BroadcastTestResult,
   IVSEvent,
+  CustomImageBuffer,
+  CustomAudioBuffer,
+  SimulcastConfig,
 } from "./types";
 
 const LINKING_ERROR =
@@ -99,11 +102,11 @@ export function stopScreenCapture(): Promise<void> {
   return AmazonIVSBroadcastModule.stopScreenCapture();
 }
 
-export function setCustomImageSource(buffer: any): Promise<void> {
+export function setCustomImageSource(buffer: CustomImageBuffer): Promise<void> {
   return AmazonIVSBroadcastModule.setCustomImageSource(buffer);
 }
 
-export function setCustomAudioSource(buffer: any): Promise<void> {
+export function setCustomAudioSource(buffer: CustomAudioBuffer): Promise<void> {
   return AmazonIVSBroadcastModule.setCustomAudioSource(buffer);
 }
 
@@ -117,7 +120,7 @@ export function getSessionId(): Promise<string> {
   return AmazonIVSBroadcastModule.getSessionId();
 }
 
-export function setSimulcastConfig(config: any): Promise<void> {
+export function setSimulcastConfig(config: SimulcastConfig): Promise<void> {
   return AmazonIVSBroadcastModule.setSimulcastConfig(config);
 }
 
