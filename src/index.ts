@@ -38,7 +38,9 @@ const AmazonIVSBroadcastModule = NativeModules.AmazonIVSBroadcastModule
       }
     );
 
-const emitter = new NativeEventEmitter(NativeModules.AmazonIVSBroadcastModule);
+const emitter = NativeModules.AmazonIVSBroadcastModule
+  ? new NativeEventEmitter(NativeModules.AmazonIVSBroadcastModule)
+  : undefined;
 
 export function startBroadcast(options: BroadcastOptions): Promise<void> {
   return AmazonIVSBroadcastModule.startBroadcast(options);
@@ -73,6 +75,7 @@ export function attachMicrophone(deviceId: string): Promise<void> {
 }
 
 export function addListener(event: IVSEvent, callback: (data: any) => void) {
+  if (!emitter) throw new Error(LINKING_ERROR);
   return emitter.addListener(event, callback);
 }
 
