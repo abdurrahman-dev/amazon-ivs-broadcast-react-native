@@ -1,0 +1,8 @@
+example/
+node_modules/
+*.log
+*.tsbuildinfo
+src/
+tsconfig.json
+.gitignore
+README.md 
