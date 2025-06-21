@@ -352,19 +352,4 @@ class AmazonIVSBroadcastModule: RCTEventEmitter, IVSBroadcastSession.Delegate {
   }
 
   // Event desteği için gerekli fonksiyonlar ve delegate implementasyonu ileride eklenecek.
-}
-
-@objc(AmazonIVSBroadcastPreviewManager)
-class AmazonIVSBroadcastPreviewManager: RCTViewManager {
-  override static func requiresMainQueueSetup() -> Bool {
-    return true
-  }
-  override func view() -> UIView! {
-    let preview = IVSPreviewView()
-    if let session = AmazonIVSBroadcastModule.sharedSession {
-      preview.session = session
-    }
-    return preview
-  }
-} 
 } 
