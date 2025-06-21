@@ -21,11 +21,11 @@ class AmazonIVSBroadcastPreviewManager: RCTViewManager {
   @objc func setAspectMode(_ preview: IVSImagePreviewView, mode: NSString) {
     switch mode as String {
     case "fit":
-      preview.aspectMode = .fit
+      preview.scaleMode = .aspectFit
     case "fill":
-      preview.aspectMode = .fill
+      preview.scaleMode = .aspectFill
     default:
-      preview.aspectMode = .fit
+      preview.scaleMode = .aspectFit
     }
   }
 

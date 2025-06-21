@@ -4,7 +4,7 @@ import android.content.Context;
 import android.view.View;
 
 import com.amazonaws.ivs.broadcast.ImagePreviewView;
-import com.amazonaws.ivs.broadcast.BroadcastConfiguration.AspectMode;
+import com.amazonaws.ivs.broadcast.BroadcastConfiguration.ScaleMode;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
@@ -38,13 +38,13 @@ public class AmazonIVSBroadcastPreviewManager extends SimpleViewManager<ImagePre
     public void setAspectMode(ImagePreviewView view, String mode) {
         switch (mode) {
             case "fit":
-                view.setAspectMode(AspectMode.FIT);
+                view.setScaleMode(ScaleMode.ASPECT_FIT);
                 break;
             case "fill":
-                view.setAspectMode(AspectMode.FILL);
+                view.setScaleMode(ScaleMode.ASPECT_FILL);
                 break;
             default:
-                view.setAspectMode(AspectMode.FIT);
+                view.setScaleMode(ScaleMode.ASPECT_FIT);
         }
     }
 

@@ -61,7 +61,7 @@ import {
   getStreamMetrics,
   configureAudioSession,
   addListener,
-  removeListener,
+  removeAllListeners,
   IVSBroadcastPreview,
 } from 'amazon-ivs-broadcast-react-native';
 

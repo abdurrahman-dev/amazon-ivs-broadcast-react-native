@@ -71,10 +71,10 @@ export type TransmissionStats = {
   audioSampleRate: number;
 };
 
-export type AspectMode = "fit" | "fill";
+export type ScaleMode = "fit" | "fill";
 
 export type PreviewProps = {
-  aspectMode?: AspectMode;
+  aspectMode?: ScaleMode;
   mirrored?: boolean;
   onErrorOccurred?: (error: Error) => void;
   style?: any;

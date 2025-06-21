@@ -16,7 +16,6 @@ import type {
   BroadcastConfig,
   BroadcastOptions,
   TransmissionStats,
-  AspectMode,
   PreviewProps,
   IVSEvent,
   ErrorEvent,
@@ -129,11 +128,11 @@ export function addListener(
   return emitter?.addListener(eventType, listener);
 }
 
-export function removeListener(
+export function removeAllListeners(
   eventType: IVSEvent,
   listener: (event: any) => void
 ) {
-  emitter?.addListener(eventType, listener).remove();
+  emitter?.removeAllListeners(eventType);
 }
 
 // Preview Bileşeni
